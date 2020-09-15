@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "run": "C:/Users/USER/mongoDB/mongoDB/bin/mongod.exe --dbpath=C:/Users/USER/mongoDB-data",
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^3.6.2"
+    "mongodb": "^3.6.2",
+    "mongoose": "^5.10.5",
+    "nodemon": "^2.0.4",
+    "validator": "^13.1.1"
   }
 }
