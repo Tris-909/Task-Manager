@@ -9,7 +9,6 @@ const auth = async (req, res, next) => {
         const arrayTakeIn = AuthorizationContent.split(' ');
         //Split the string and get the second elements since that is the token
         const token = arrayTakeIn[1];
-        
         // Do some comparisions using this token you get from headers, combine it with secret key in the model file where you created it 
         // to return the same token 
         const decoded = jwt.verify(token, 'Minhtri1');
@@ -22,7 +21,7 @@ const auth = async (req, res, next) => {
         if (!user) {
             throw new Error('')
         }
-
+        req.token = token;
         req.user = user;
         next();
     } catch(error) {

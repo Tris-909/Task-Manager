@@ -26,6 +26,29 @@ router.post('/users/login', async (req, res) => {
     }
 });
 
+router.post('/users/logout', auth, async(req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token
+        });
+        await req.user.save()
+        
+        res.send()
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+router.post('/users/logAllOut', auth, async(req, res) => {
+    try {
+        req.user.tokens = [];
+        await req.user.save();
+        res.status(200).send('Log Out From All Devices Successfully')
+    } catch (error) {
+        res.status(500).send(error)
+    }
+});
+
 router.get('/users/me', auth ,async (req, res) => {
     res.status(200).send(req.user);
 });
