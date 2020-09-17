@@ -10,7 +10,7 @@ router.post('/users', async (req, res) => {
     try {
         const token = await user.getToken();
         await user.save()
-        res.status(201).send({user, token});
+        res.status(201).send({ user, token});
     } catch (error) {
         res.status(400).send(error);
     }
@@ -19,8 +19,23 @@ router.post('/users', async (req, res) => {
 router.post('/users/login', async (req, res) => {
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password);
+        // this user object contain "password" and "email"
+        
         const token = await user.getToken();
-        res.send({ user, token });
+
+        // But this object below don't even though it the same user, we do this by using a method called toJSON
+        // When we use res.send(), behind the screen Express will use stringify() to turn our object into JSON to send across the globe
+        // toJSON() is the method in which it will interfere the obj before it get stringified 
+        // toJSON() is just a function, and if toJSON return an empty object, then you will send an empty OBJ over the globe
+        // Since all our routes return some information (users) mostly. We will use toJSON() to remove tokens and password from 
+        // the obj we send through our API endpoints for security reason
+
+        // The user object following User Schema, and we use toJSON on the User SCHEMA, so only the obj user will be executed by toJSON
+        // And since we remove tokens and password, these props don't exist inside task obj, which is exactly what we want, because when
+        // we return the user obj we erase password and tokens, if computer can't find password inside task obj (of course it can't)
+        // it will return an error and break our app.
+
+        res.send({ user: user, token });
     } catch(error) {
         res.status(404).send(error);
     }
@@ -67,7 +82,7 @@ router.get('/users/:id',async (req, res) => {
     }
 });
 
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/me', auth ,async (req, res) => {
     const updates = Object.keys(req.body);
     const isValid = ['name', 'email', 'password'];
     const updateIsValid = updates.every((update) => isValid.includes(update));
@@ -77,13 +92,10 @@ router.patch('/users/:id', async (req, res) => {
     }
 
     try {
-        const id = req.params.id;
-
-        const user = await User.findById({ _id: id });
         updates.forEach((update) => {
-            user[update] = req.body[update]
+            req.user[update] = req.body[update]
         });
-        const result = await user.save()
+        const result = await req.user.save()
 
         if (!result) {
             res.status(404).send();
@@ -94,13 +106,13 @@ router.patch('/users/:id', async (req, res) => {
     }
 });
 
-router.delete('/users/:id', async(req, res) => {
+router.delete('/users/me', auth, async(req, res) => {
+    // auth middleware will return the authenticated user information 
+    // Using this information we can get access to that document on mongoDB using mongoose 
+    // And delete that documents
     try {
-        const result = await User.findByIdAndDelete(req.params.id);
-        if (!result) {
-            res.status(404).send('No User Found');
-        }
-        res.status(200).send(result);
+        await req.user.remove();
+        res.status(200).send(req.user);
     } catch (error) {
         res.status(500).send(error);
     }

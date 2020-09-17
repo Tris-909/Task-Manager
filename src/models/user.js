@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema({
     }]
 });
 
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
+});
+
 userSchema.methods.getToken = async function() {
     const user = this;
     const token = jwt.sign({ _id: user._id.toString() }, 'Minhtri1');
@@ -56,6 +62,20 @@ userSchema.methods.getToken = async function() {
     await user.save()
 
     return token;
+}
+
+userSchema.methods.toJSON = function() {
+    const user = this;
+
+    // Object "user" is still a json object so you want to turn it into obj and push it as the result of this function
+    const result = user.toObject();     
+
+    // Remove password and tokens from the object above so you can return the puclic obj
+    // "delete" method can be accessed from schema 
+    delete result.password 
+    delete result.tokens
+
+    return result;
 }
 
 // Create a static Function to apply to Schema 

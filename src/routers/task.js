@@ -1,11 +1,12 @@
 const express = require('express');
 const router = new express.Router();
-
+const auth = require('../middlewares/auth');
 const Task = require('../models/task');
 
-router.post('/tasks',async (req, res) => {
+router.post('/tasks', auth ,async (req, res) => {
+    const task = new Task({ ...req.body, owner: req.user._id })
+
     try {
-        const task = new Task(req.body);
         await task.save();
         res.status(201).send(task);
     } catch(error) {
@@ -13,29 +14,34 @@ router.post('/tasks',async (req, res) => {
     }
 });
 
-router.get('/tasks',async (req, res) => {
+router.get('/tasks/me', auth ,async (req, res) => {
     try {
-        const result = await Task.find({});
+        const result = await Task.find({ owner: req.user._id });
         res.status(200).send(result);
     } catch(error) {
         res.status(400).send(error);
     }
 });
 
-router.get('/tasks/:id',async (req, res) => {
+router.get('/tasks/:id' ,auth ,async (req, res) => {
     try {
         const _id = req.params.id;
-        const result = await Task.findById({ _id });
+        const result = await Task.findById({ _id });    
         if (!result) {
             return res.status(404).send('Task Not Found');
         }
-        res.status(200).send(result);
+
+        if (result.owner.toString() == req.user._id.toString()) {
+            return res.status(200).send(result);
+        }
+
+        res.status(401).send('Naughty boy, don\'t get other people data');
     } catch (error) {
         res.status(400).send(error);
     }
 });
 
-router.patch('/tasks/:id', async (req, res) => {
+router.patch('/tasks/:id', auth ,async (req, res) => {
     const updateField = Object.keys(req.body);
     const ValidField = ['description', 'completed'];
     const isValid = updateField.every((singleField) => ValidField.includes(singleField));
@@ -46,28 +52,47 @@ router.patch('/tasks/:id', async (req, res) => {
 
     try {
         const task = await Task.findById({ _id: req.params.id });
-        updateField.forEach((update) => {
-            task[update] = req.body[update];
-        });
-        const result = await task.save();
-        
-        if (!result) {
+
+        if (!task) {
             return res.status(404).send('No Task Found !');
         }
-        res.status(200).send(result);
+
+        const taskOwnerID = task.owner.toString();
+        const AuthUserID = req.user._id.toString();
+
+        if (AuthUserID == taskOwnerID) {
+            updateField.forEach((update) => {
+                task[update] = req.body[update];
+            });
+            const result = await task.save();
+
+            return res.status(200).send(result);
+        }
+
+        res.status(401).send('You are not the same user who created this task');
 
     } catch (error) {
         res.status(400).send(error);
     }
 });
 
-router.delete('/tasks/:id', async (req, res) => {
+router.delete('/tasks/:id', auth, async (req, res) => {
     try {
-        const result = await Task.findByIdAndDelete(req.params.id);
-        if (!result) {
+        const userAuthID = req.user._id.toString();
+        const task = await Task.findById({ _id: req.params.id });
+ 
+        if (!task) {
             res.status(404).send('Task not found');
         }
-        res.status(200).send(result);
+
+        const taskOwnerID = task.owner.toString();
+
+        if (taskOwnerID == userAuthID) {
+            const result = await Task.findByIdAndDelete(req.params.id);
+            return res.status(200).send(result);
+        }
+
+        res.status(401).send("You are not the same person who create this task");
     } catch(error) {
         res.status(400).send(error);
     }
