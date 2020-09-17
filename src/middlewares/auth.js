@@ -19,7 +19,7 @@ const auth = async (req, res, next) => {
 
         // user obj that contain the user information  
         if (!user) {
-            throw new Error('')
+            throw new Error('No user Found')
         }
         req.token = token;
         req.user = user;

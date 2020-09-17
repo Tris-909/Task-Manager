@@ -15,9 +15,19 @@ router.post('/tasks', auth ,async (req, res) => {
 });
 
 router.get('/tasks/me', auth ,async (req, res) => {
+    const filter = req.query.completed;
+
     try {
-        const result = await Task.find({ owner: req.user._id });
-        res.status(200).send(result);
+        if (filter === 'true') {
+            const result = await Task.find({ owner: req.user._id, completed: true });
+            return res.status(200).send(result);
+        } else if (filter === 'false') {
+            const result = await Task.find({ owner: req.user._id, completed: false });
+            return res.status(200).send(result);
+        } else {
+            const result = await Task.find({ owner: req.user._id });
+            return res.status(200).send(result);
+        }
     } catch(error) {
         res.status(400).send(error);
     }
