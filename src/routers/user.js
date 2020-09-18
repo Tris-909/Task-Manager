@@ -2,6 +2,59 @@ const express = require('express');
 const router = new express.Router();
 const auth = require('../middlewares/auth');
 const User = require('../models/user');
+const sharp = require('sharp');
+
+// Using Multer npm to upload images
+const multer = require('multer');
+const upload = multer({
+    limits: {
+        fileSize: 1000000
+    },
+    fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(png|jpeg|jpg)$/)) {
+            cb(new Error('Please choose file that is PNG, JPEG or JPG'))
+        }
+
+        cb(undefined, true);
+    }
+});
+
+router.post('/users/me/avatar', auth ,upload.single('avatar'), async (req, res) => {
+    const buffer = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
+    
+    req.user.avatar = buffer;
+    await req.user.save();
+    res.send('Your Avatar have updated successfully');
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+});
+
+router.get('/users/:id/avatar',async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user || !user.avatar) {
+            throw new Error('Something is wrong, please try again :(');
+        }
+
+
+        res.set('Content-Type', 'image/png');
+        res.send(user.avatar);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+})
+
+router.delete('/users/me/avatar', auth, async (req, res) => {
+    try {
+        req.user.avatar = undefined;
+        await req.user.save();
+        res.send('Your Avatar have been deleted successfully');
+    } catch (error) {
+        res.status(400).send(error);
+    }
+});
+
 
 
 router.post('/users', async (req, res) => {
@@ -67,6 +120,8 @@ router.post('/users/logAllOut', auth, async(req, res) => {
 router.get('/users/me', auth ,async (req, res) => {
     res.status(200).send(req.user);
 });
+
+
 
 router.get('/users/:id',async (req, res) => {
     const _id = req.params.id;
