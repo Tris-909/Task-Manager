@@ -3,6 +3,7 @@ const router = new express.Router();
 const auth = require('../middlewares/auth');
 const User = require('../models/user');
 const sharp = require('sharp');
+const { sendWelcomeEmail, sendDeletEmail } = require('../email/account');
 
 // Using Multer npm to upload images
 const multer = require('multer');
@@ -61,6 +62,7 @@ router.post('/users', async (req, res) => {
     const user = new User(req.body);
 
     try {
+        sendWelcomeEmail(user.email, user.name);
         const token = await user.getToken();
         await user.save()
         res.status(201).send({ user, token});
@@ -167,7 +169,8 @@ router.delete('/users/me', auth, async(req, res) => {
     // And delete that documents
     try {
         await req.user.remove();
-        res.status(200).send(req.user);
+        sendDeletEmail(req.user.email, req.user.name);
+        res.status(200).send();
     } catch (error) {
         res.status(500).send(error);
     }

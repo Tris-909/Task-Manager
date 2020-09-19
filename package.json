@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "run": "C:/Users/USER/mongoDB/mongoDB/bin/mongod.exe --dbpath=C:/Users/USER/mongoDB-data",
-    "dev": "nodemon src/index.js"
+    "dev": "env-cmd -f ./config/dev.env nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^7.2.6",
     "bcryptjs": "^2.4.3",
+    "env-cmd": "^10.1.0",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.6.2",
     "mongoose": "^5.10.5",

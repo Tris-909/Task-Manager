@@ -11,7 +11,7 @@ const auth = async (req, res, next) => {
         const token = arrayTakeIn[1];
         // Do some comparisions using this token you get from headers, combine it with secret key in the model file where you created it 
         // to return the same token 
-        const decoded = jwt.verify(token, 'Minhtri1');
+        const decoded = jwt.verify(token, process.env.SECRET_KEY_JWT);
         
         // We create our token by using our ID + secret key, so now when we give our token with secret key it will return our ID
         // Using this ID to do findOne methods on Mongoose
